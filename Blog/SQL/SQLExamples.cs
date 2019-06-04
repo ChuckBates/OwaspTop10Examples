@@ -7,10 +7,12 @@ namespace Blog.SQL
     public class SQLExamples
     {
         private IConfiguration Configuration { get; }
+        private readonly UsersContext _context;
 
-        public SQLExamples(IConfiguration configuration)
+        public SQLExamples(IConfiguration configuration, UsersContext context)
         {
             Configuration = configuration;
+            _context = context;
         }
 
         /// <summary>
@@ -30,6 +32,17 @@ namespace Blog.SQL
                 cmd.Parameters.Add(new SqlParameter(nameof(comment.Id), comment.Id));
                 cmd.ExecuteNonQuery();
             }
+        }
+        
+        public IActionResult Authenticate(string user)
+        {
+          var query = "SELECT * FROM Users WHERE Username = '" + user + "'"; // Unsafe
+          var userExists = _context.Users.FromSql(query).Any(); // Noncompliant
+
+          // An attacker can bypass authentication by setting user to this special value
+          user = "' or 1=1 or ''='";
+
+          return Content(userExists ? "success" : "fail");
         }
     }
 }
